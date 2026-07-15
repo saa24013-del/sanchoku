@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>産直野菜マーケット</title>
+  
+  <style>
+    /* 🟢 背景色は優しい薄い緑色（ナチュラルハーブ） */
+    body {
+      background-color: #F1F8E9; 
+      color: #2E7D32;            /* 文字色は濃い緑 */
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    /* 野菜カードのデザイン */
+    .veg-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+      border-left: 5px solid #81C784; /* カードの左側にアクセントの緑ライン */
+    }
+
+    .veg-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #1B5E20;
+      margin: 0 0 8px 0;
+    }
+
+    .veg-info {
+      margin: 4px 0;
+      color: #455A64;
+      font-size: 0.95rem;
+    }
+
+    .status-msg {
+      text-align: center;
+      color: #558B2F;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>新鮮な産直野菜一覧</h1>
+    <div id="status" class="status-msg">接続中...</div>
+    
+    <div id="vegetable-list"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      getDocs, 
+      query, 
+      where 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyAKZnSjEvnhBewVI2Q1--7jsjsJH2GxedE",
+      authDomain: "sanchoku-352ce.firebaseapp.com",
+      projectId: "sanchoku-352ce",
+      storageBucket: "sanchoku-352ce.firebasestorage.app",
+      messagingSenderId: "869735801110",
+      appId: "1:869735801110:web:c83c3f45f77e2b0a0d3037"
+    };
+
+    // 初期化
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 追加する初期野菜データの一覧
+    const defaultVegetables = [
+      { name: "完熟トマト", price: 250, origin: "熊本県産", season: "夏", isAvailable: true },
+      { name: "スイートコーン", price: 180, origin: "北海道産", season: "夏", isAvailable: true },
+      { name: "みずみずしいナス", price: 150, origin: "高知県産", season: "夏秋", isAvailable: true },
+      { name: "香り豊かな大葉（シソ）", price: 100, origin: "愛知県産", season: "夏", isAvailable: true }
+    ];
+
+    // 1. 野菜データをFirestoreに登録する関数（重複登録を防ぐチェック付き）
+    async function initializeVegetableData() {
+      const statusDiv = document.getElementById("status");
+      statusDiv.innerText = "野菜データを準備中...";
+
+      try {
+        const vegCollection = collection(db, "vegetables");
+        const snapshot = await getDocs(vegCollection);
+
+        // すでにデータが存在する場合は登録処理をスキップ
+        if (snapshot.empty) {
+          statusDiv.innerText = "初期データを登録しています...";
+          for (const veg of defaultVegetables) {
+            await addDoc(vegCollection, {
+              ...veg,
+              createdAt: new Date()
+            });
+          }
+          statusDiv.innerText = "野菜データの初期登録が完了しました！";
+        } else {
+          statusDiv.innerText = "最新の野菜情報を表示中";
+        }
+      } catch (error) {
+        console.error("データ登録エラー:", error);
+        statusDiv.innerText = "データの準備中にエラーが発生しました。";
+      }
+    }
+
+    // 2. 登録された野菜を表示する関数
+    async function displayVegetables() {
+      const listContainer = document.getElementById("vegetable-list");
+      listContainer.innerHTML = "<p style='text-align:center;'>読み込み中...</p>";
+      
+      try {
+        const q = query(collection(db, "vegetables"), where("isAvailable", "==", true));
+        const querySnapshot = await getDocs(q);
+        
+        listContainer.innerHTML = ""; // 読み込み中表示をクリア
+
+        if (querySnapshot.empty) {
+          listContainer.innerHTML = "<p style='text-align:center;'>販売中の野菜はありません。</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const veg = doc.data();
+          const card = document.createElement("div");
+          card.className = "veg-card";
+          card.innerHTML = `
+            <div class="veg-name">🌱 ${veg.name}</div>
+            <div class="veg-info"><strong>価格:</strong> ¥${veg.price} (税込)</div>
+            <div class="veg-info"><strong>産地:</strong> ${veg.origin}</div>
+            <div class="veg-info"><strong>旬の時期:</strong> ${veg.season}</div>
+          `;
+          listContainer.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error("データ取得エラー:", error);
+        listContainer.innerHTML = "<p style='text-align:center; color:red;'>データの取得に失敗しました。</p>";
+      }
+    }
+
+    // 実行処理の流れ
+    async function startApp() {
+      await initializeVegetableData(); // データの登録（初回のみ）
+      await displayVegetables();       // データの表示
+    }
+
+    startApp();
+  </script>
+</body>
+</html>
