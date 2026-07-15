@@ -79,12 +79,12 @@
 
     // Firebase 設定
     const firebaseConfig = {
-      apiKey: "AIzaSyAKZnSjEvnhBewVI2Q1--7jsjsJH2GxedE",
-      authDomain: "sanchoku-352ce.firebaseapp.com",
-      projectId: "sanchoku-352ce",
-      storageBucket: "sanchoku-352ce.firebasestorage.app",
-      messagingSenderId: "869735801110",
-      appId: "1:869735801110:web:c83c3f45f77e2b0a0d3037"
+　apiKey: "AIzaSyAKZnSjEvnhBewVI2Q1--7jsjsJH2GxedE",
+  authDomain: "sanchoku-352ce.firebaseapp.com",
+  projectId: "sanchoku-352ce",
+  storageBucket: "sanchoku-352ce.firebasestorage.app",
+  messagingSenderId: "869735801110",
+  appId: "1:869735801110:web:c83c3f45f77e2b0a0d3037"
     };
 
     // 初期化
